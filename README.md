@@ -1,2 +1,2 @@
 # toppic
-Browse reddit by topics, across multiple subreddits.
+Browse reddit by topic, across multiple subreddits.
