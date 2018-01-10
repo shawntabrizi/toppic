@@ -80,15 +80,46 @@ async function showAllPostsForTopic() {
 
     createSubredditKey(subreddits);
 
+    var output = document.getElementById('output');
+    var rows = [].slice.call(output.getElementsByClassName('reddit-post'), 0);
+
+    var table = document.createElement('table');
+    table.id = 'main_table'
+    var thead = document.createElement('thead');
+    var tr = document.createElement('tr');
+    var upvotes = document.createElement('th');
+    upvotes.scope = 'col';
+    upvotes.innerText = '#'
+
+    var title = document.createElement('th');
+    title.scope = 'col';
+    title.innerText = 'Title'
+
+    var subredditName = document.createElement('th');
+    subredditName.scope = 'col';
+    subredditName.innerText = 'Subreddit'
+
+    tr.appendChild(upvotes)
+    tr.appendChild(title)
+    tr.appendChild(subredditName)
+
+    thead.appendChild(tr)
+
+    var tbody = document.createElement('tbody')
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+
+    output.appendChild(table)
+
+
     for (sub in subreddits) {
         var subreddit = subreddits[sub];
         var posts = await getTopPosts(subreddit, listing);
         posts.sort(sortPosts);
 
 
-        var output = document.getElementById('output');
-        var divs = [].slice.call(output.getElementsByClassName('reddit-post'), 0);
-
+        
         var i = 0;
         var j = 0;
         //There is probably a better way to do this loop, but i dunno, its 5am.
@@ -99,27 +130,44 @@ async function showAllPostsForTopic() {
                 let score = post['data']['score'];
                 let link = redditCoreURL + post['data']['permalink']
 
-                var postOutput = document.createElement('div');
-                postOutput.setAttribute('data-score', score)
-                postOutput.setAttribute('data-subreddit', subreddit['name'])
-                postOutput.setAttribute('class', 'reddit-post')
+                
+
+                var tableRow = document.createElement('tr');
+                tableRow.setAttribute('data-score', score)
+                tableRow.setAttribute('data-subreddit', subreddit['name'])
+                tableRow.setAttribute('class', 'reddit-post')
+
+                var upvoteValue = document.createElement('td');
+                upvoteValue.innerText = score;
+
+                var titleValue = document.createElement('td');
                 var aLink = document.createElement('a')
                 aLink.href = link;
                 aLink.target = '_blank';
-                aLink.innerText = `[${score}] ${title} (${subreddit['name']})`;
+                aLink.innerText = title;
+                titleValue.appendChild(aLink);
 
-                postOutput.appendChild(aLink)
+                var subredditValue = document.createElement('td');
+                subredditValue.innerText = subreddit['name'];
+
+                
+
+                tableRow.appendChild(upvoteValue)
+                tableRow.appendChild(titleValue)
+                tableRow.appendChild(subredditValue)
+
+                
 
                 //If there is a div element to check, and the score is larger than the div-score, add the new element above it
-                if (divs[i] && score > divs[i].getAttribute('data-score')) {
-                    output.insertBefore(postOutput, divs[i]);
+                if (rows[i] && score > rows[i].getAttribute('data-score')) {
+                    tbody.insertBefore(tableRow, rows[i]);
                     j++;
                 //Once the score is below the one we checked, if there is a next element to check, break the loop, and check the next element on the same posts[j]
-                } else if (divs[i+1]) {
+                } else if (rows[i+1]) {
                     break;
                 //Otherwise, add element to the end
                 } else {
-                    output.appendChild(postOutput);
+                    tbody.appendChild(tableRow);
                     j++;
                 }
             }
@@ -130,7 +178,7 @@ async function showAllPostsForTopic() {
 
             i++;
             //console.log("loop: " + i + "," + j)
-        } while (i < divs.length)
+        } while (i < rows.length)
     }
 
     console.log("Done!")
@@ -147,3 +195,7 @@ document.querySelector('#key').addEventListener('change', function (event) {
         }
     }
 })
+
+$(document).ready(function () {
+    $('#main_table').DataTable();
+});
