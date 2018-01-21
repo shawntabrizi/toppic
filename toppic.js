@@ -12,15 +12,33 @@ async function getSubredditsByTopic(topic) {
 }
 
 //Get the top posts for a subreddit, given a time filter
-async function getTopPosts(subreddit, listing = 'top', time = 'week') {
-    var query = '?t=' + time
-    var redditURL = redditCoreURL + subreddit['path'] + listing + '.json' + query;
-    console.log(redditURL)
-    var response = await fetch(redditURL);
-    var data = await response.json();
-    //console.log(JSON.stringify(data['data']));
+async function getTopPosts(subreddits, listing = 'top', time) {
+    var subredditsUrls = subreddits.map(function (subreddit) {
+        var redditURL = redditCoreURL + subreddit['path'] + listing + '.json'
 
-    return data['data']['children'];
+        if (time) {
+            redditURL += '?t=' + time
+        }
+
+        return redditURL
+    });
+
+    //get all posts in parellel
+    var data = await Promise.all(
+        subredditsUrls.map(
+            url =>
+                fetch(url).then(
+                    (response) => response.json()
+                )));
+
+    //organize the posts into a single array
+    var posts = []
+
+    for (d in data) {
+        posts = posts.concat(data[d]['data']['children'])
+    }
+
+    return posts
 }
 
 //Probably doesn't need to be its own function
@@ -70,21 +88,15 @@ function createSubredditKey(subreddits) {
     }
 }
 
-async function showAllPostsForTopic() {
-    clearOutput();
 
-    var input = getInput();
-    var topic = input[0]
-    var listing = input[1]
-    var subreddits = await getSubredditsByTopic(topic);
-
-    createSubredditKey(subreddits);
-
+function createTable() {
     var output = document.getElementById('output');
     var rows = [].slice.call(output.getElementsByClassName('reddit-post'), 0);
 
     var table = document.createElement('table');
     table.id = 'main_table'
+    table.setAttribute('class', 'table table-striped')
+
     var thead = document.createElement('thead');
     var tr = document.createElement('tr');
     var upvotes = document.createElement('th');
@@ -106,80 +118,74 @@ async function showAllPostsForTopic() {
     thead.appendChild(tr)
 
     var tbody = document.createElement('tbody')
+    tbody.id = 'tableBody'
 
     table.appendChild(thead);
     table.appendChild(tbody);
 
     output.appendChild(table)
+}
 
+function createRow(post) {
 
-    for (sub in subreddits) {
-        var subreddit = subreddits[sub];
-        var posts = await getTopPosts(subreddit, listing);
-        posts.sort(sortPosts);
+    var tbody = document.getElementById("tableBody")
 
+    let title = post['data']['title'];
+    let score = post['data']['score'];
+    let link = redditCoreURL + post['data']['permalink'];
+    let subredditName = post['data']['subreddit'];
 
-        
-        var i = 0;
-        var j = 0;
-        //There is probably a better way to do this loop, but i dunno, its 5am.
-        do {
-            while (j < posts.length) {
-                var post = posts[j];
-                let title = post['data']['title'];
-                let score = post['data']['score'];
-                let link = redditCoreURL + post['data']['permalink']
+    var tableRow = document.createElement('tr');
+    tableRow.setAttribute('data-subreddit', subredditName);
+    tableRow.setAttribute('class', 'reddit-post');
 
-                
+    var upvoteValue = document.createElement('td');
+    upvoteValue.innerText = score;
 
-                var tableRow = document.createElement('tr');
-                tableRow.setAttribute('data-score', score)
-                tableRow.setAttribute('data-subreddit', subreddit['name'])
-                tableRow.setAttribute('class', 'reddit-post')
+    var titleValue = document.createElement('td');
+    var aLink = document.createElement('a')
+    aLink.href = link;
+    aLink.target = '_blank';
+    aLink.innerText = title;
+    titleValue.appendChild(aLink);
 
-                var upvoteValue = document.createElement('td');
-                upvoteValue.innerText = score;
+    var subredditValue = document.createElement('td');
+    subredditValue.innerText = subredditName;
 
-                var titleValue = document.createElement('td');
-                var aLink = document.createElement('a')
-                aLink.href = link;
-                aLink.target = '_blank';
-                aLink.innerText = title;
-                titleValue.appendChild(aLink);
+    tableRow.appendChild(upvoteValue)
+    tableRow.appendChild(titleValue)
+    tableRow.appendChild(subredditValue)
 
-                var subredditValue = document.createElement('td');
-                subredditValue.innerText = subreddit['name'];
+    tbody.appendChild(tableRow);
+}
 
-                
+async function showAllPostsForTopic() {
+    clearOutput();
 
-                tableRow.appendChild(upvoteValue)
-                tableRow.appendChild(titleValue)
-                tableRow.appendChild(subredditValue)
+    var input = getInput();
+    var topic = input[0]
+    var listing = input[1].split("_")
+    var subreddits = await getSubredditsByTopic(topic);
 
-                
+    createSubredditKey(subreddits);
 
-                //If there is a div element to check, and the score is larger than the div-score, add the new element above it
-                if (rows[i] && score > rows[i].getAttribute('data-score')) {
-                    tbody.insertBefore(tableRow, rows[i]);
-                    j++;
-                //Once the score is below the one we checked, if there is a next element to check, break the loop, and check the next element on the same posts[j]
-                } else if (rows[i+1]) {
-                    break;
-                //Otherwise, add element to the end
-                } else {
-                    tbody.appendChild(tableRow);
-                    j++;
-                }
-            }
-
-            if (j == posts.length) {
-                break;
-            }
-
-            i++;
-            //console.log("loop: " + i + "," + j)
-        } while (i < rows.length)
+    createTable();
+    if (listing.length == 1) {
+        var posts = await getTopPosts(subreddits, listing[0])
+    } else if (listing.length == 2) {
+        var posts = await getTopPosts(subreddits, listing[0], listing[1])
     }
+
+    for (p in posts) {
+        var post = posts[p]
+        createRow(post);
+    }
+
+    $('#main_table').DataTable({
+        "pageLength": -1,
+        "order": [[0, "desc"]],
+        "dom": '<"top"f>rt<"bottom"><br/><"clear">'
+    });
 
     console.log("Done!")
 }
@@ -187,15 +193,11 @@ async function showAllPostsForTopic() {
 document.querySelector('#key').addEventListener('change', function (event) {
     if (event.target.classList.contains('form-check-input')) {
         let value = event.target.value;
-        
+
         let elements = document.querySelectorAll(`[data-subreddit="${value}"]`)
-        
+
         for (let i = 0; i < elements.length; i++) {
             elements[i].style.display = elements[i].style.display === 'none' ? '' : 'none';
         }
     }
 })
-
-$(document).ready(function () {
-    $('#main_table').DataTable();
-});

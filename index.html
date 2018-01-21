@@ -11,6 +11,9 @@
     <!-- Datatables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.css">
 
+    <!-- Datatables CSS -->
+    <link rel="stylesheet" type="text/css" href="./toppic.css">
+
     <title>Toppic</title>
 </head>
 <body>
@@ -19,14 +22,16 @@
             <h1>Toppic</h1>
             <p>Browse reddit by topic, across multiple subreddits. - Made by <a href="http://shawntabrizi.com">Shawn Tabrizi</a></p>
             <div class="input-group">
-                <input type="text" class="form-control" placeholder="Insert a topic to search..." id="input" />
+                <input type="text" class="form-control" placeholder="Insert a topic to search..." id="input" value="crypto"/>
                 <div class="input-group-append">
                     <select class="custom-select" id="select">
-                        <option value="hot" selected>hot</option>
+                        <option value="hot">hot</option>
                         <option value="new">new</option>
-                        <option value="rising">rising</option>
-                        <option value="top">top</option>
-                        <option value="controversial">controversial</option>
+                        <option value="rising" selected>rising</option>
+                        <option value="top_hour">top - past hour</option>
+                        <option value="top_day">top - past day</option>
+                        <option value="top_week">top - past week</option>
+                        <option value="controversial_day">controversial</option>
                         <option value="gilded">gilded</option>
                     </select>
                 </div>
