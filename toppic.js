@@ -55,6 +55,7 @@ function sortPosts(a, b) {
     return bScore - aScore
 }
 
+//empty the output box
 function clearOutput() {
     var output = document.getElementById('output')
     output.innerHTML = ''
@@ -62,6 +63,7 @@ function clearOutput() {
     return;
 }
 
+//create a key of subreddits used
 function createSubredditKey(subreddits) {
     var keyArea = document.getElementById('key');
 
@@ -88,7 +90,7 @@ function createSubredditKey(subreddits) {
     }
 }
 
-
+//create the main table body and header
 function createTable() {
     var output = document.getElementById('output');
     var rows = [].slice.call(output.getElementsByClassName('reddit-post'), 0);
@@ -126,6 +128,7 @@ function createTable() {
     output.appendChild(table)
 }
 
+//insert a table row into table body
 function createRow(post) {
 
     var tbody = document.getElementById("tableBody")
@@ -159,19 +162,23 @@ function createRow(post) {
     tbody.appendChild(tableRow);
 }
 
+//main function
 async function showAllPostsForTopic() {
     clearOutput();
 
     var input = getInput();
     var topic = input[0]
+    //we stick time information in the select value
     var listing = input[1].split("_")
     var subreddits = await getSubredditsByTopic(topic);
 
     createSubredditKey(subreddits);
 
     createTable();
+    //if no time information
     if (listing.length == 1) {
         var posts = await getTopPosts(subreddits, listing[0])
+    //if time information available
     } else if (listing.length == 2) {
         var posts = await getTopPosts(subreddits, listing[0], listing[1])
     }
@@ -182,7 +189,9 @@ async function showAllPostsForTopic() {
     }
 
     $('#main_table').DataTable({
+        //show all
         "pageLength": -1,
+        //order by upvote count
         "order": [[0, "desc"]],
         "dom": '<"top"f>rt<"bottom"><br/><"clear">'
     });
@@ -190,6 +199,7 @@ async function showAllPostsForTopic() {
     console.log("Done!")
 }
 
+//detect if key changes, and remove posts from that subreddit
 document.querySelector('#key').addEventListener('change', function (event) {
     if (event.target.classList.contains('form-check-input')) {
         let value = event.target.value;
