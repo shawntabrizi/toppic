@@ -1,20 +1,28 @@
 var redditCoreURL = 'https://www.reddit.com'
 
-//This function uses a reddit API to tell me the subreddits for a particular topic
+//This function uses a reddit API to search for subreddits using a keyword
 async function getSubredditsByTopic(topic) {
-    var topicURL = 'https://www.reddit.com/api/subreddits_by_topic.json?query=' + encodeURI(topic);
+    var topicURL = 'https://www.reddit.com/search.json?type=sr&q=' + encodeURI(topic);
     //console.log(topicURL)
     var response = await fetch(topicURL);
     var data = await response.json();
 
-    //console.log(data)
-    return data;
+    var output = []
+
+    for (child in data.data.children) {
+        console.log("hi")
+        output.push(data.data.children[child].data)
+    }
+
+    console.log(output)
+
+    return output;
 }
 
 //Get the top posts for a subreddit, given a time filter
 async function getTopPosts(subreddits, listing = 'top', time) {
     var subredditsUrls = subreddits.map(function (subreddit) {
-        var redditURL = redditCoreURL + subreddit['path'] + listing + '.json'
+        var redditURL = redditCoreURL + subreddit['url'] + listing + '.json'
 
         if (time) {
             redditURL += '?t=' + time
@@ -79,7 +87,7 @@ function createSubredditKey(subreddits) {
         let checkbox = document.createElement('input')
         checkbox.setAttribute('type', 'checkbox')
         checkbox.setAttribute('class', 'form-check-input')
-        checkbox.value = subreddit['name']
+        checkbox.value = subreddit['display_name']
         checkbox.checked = true;
 
         formLabel.appendChild(checkbox)
