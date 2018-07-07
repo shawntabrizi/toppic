@@ -10,12 +10,10 @@ async function getSubredditsByTopic(topic) {
     var output = []
 
     for (child in data.data.children) {
-        console.log("hi")
         output.push(data.data.children[child].data)
     }
 
-    console.log(output)
-
+    //console.log(output)
     return output;
 }
 
